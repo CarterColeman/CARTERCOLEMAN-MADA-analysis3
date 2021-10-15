@@ -1,0 +1,236 @@
+---
+title: "Exploration"
+author: "C. Coleman"
+date: "10/13/2021"
+output: html_document
+---
+
+## This document will serve as the exploration for Module 8. As indicated, the outcomes of interests are "Body Temperature" and "Nausea".
+
+_Let's start by loading needed libraries._
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(dplyr)
+library(tidymodels)
+library(ggplot2)
+library(summarytools)
+library(ggthemes)
+```
+
+</br>
+
+_Now, lets load out cleaned data._
+```{r}
+clean_df_location <- here::here("data", "processed_data", "processeddata.RDS")
+
+clean_df <- readRDS(clean_df_location)
+```
+
+_As good practice, let's summarize and take a look at clean_df._
+```{r}
+summary(clean_df)
+glimpse(clean_df)
+view(clean_df)
+```
+
+#### Now, we are going to create a new df for variables we want to explore. First, our outcomes are determined to be "Nausea" and "Body Temperature". That is to say, we want to assess what what other symptoms may be related to either presence of nausea or changes body temperature. Best on the data, I think it would be interesting to split the data into gastro intestinal (GI) associated symptoms and body temp/fever associated symptoms. Additionally, I want to include patient perceived data to see how well they indicate either a change in body temperature or presence of nausea. Additionally, I want to throw in the symptoms tooth pain and itchy eyes just for fun to see if their is any correlation between presenting in nausea or change in body temperature and having one of the other symptoms. This will just be a little extra on the side, seeing as nausea and body temperature will no longer be the outcomes.
+
+</br>
+
+#### The variables of interest are as follows: GI (Nausea as outcome): Nausea, Ab Pain, Diarrhea, Vomit.
+
+#### Fever symptoms (Body Temperature as outcome): body temp, weakness(Y/N), subjective fever, fatigue, chills/sweats.
+
+#### Others: itchy eyes, tooth pain.
+
+</br>
+_Creating a df of selected variables and calling it "exploration_df"._
+```{r}
+exploration_df <- clean_df %>%
+  select("ChillsSweats", "Fatigue", "SubjectiveFever", "WeaknessYN", "AbPain", "Diarrhea", "ItchyEye", "Nausea", "ToothPn", "Vomit", "BodyTemp")
+```
+</br>
+
+#### creating a summary statistics table using "".
+
+_At this point, it is useful to create a summary table for the variables chosen. Since most of the variables are Y/N, this table will show relative proportions of presence/absence of symptoms in ths data set_
+```{r, results='asis'}
+summary_stats <- dfSummary(exploration_df, plain.ascii = FALSE, style = "grid")
+
+print(summary_stats, method = 'render')
+```
+
+#### At this point, we are just going to start plotting and visualizing data. This will give us an idea of what symptoms are most common and ones that are most rare. This will set the stage for determineing what symptoms tend to occur together.
+
+</br>
+
+_Below is a bar plot of presence/absence of Nausea_
+```{r}
+nausea_plot <- ggplot(data=exploration_df, aes(x=Nausea, fill=Nausea)) + geom_bar() +
+labs(title= "Presence / Absence of Nausea") + xlab("Presentation of Nausea") +  ylab("Count")
+
+print(nausea_plot)
+```
+</br>
+
+_Below is a histogram of recorded Body Temperatures_
+```{r}
+BodyTemp_plot <- ggplot(data=exploration_df, aes(x=BodyTemp)) + geom_histogram(fill="blue") + labs(title= "Body Temperature Histogram") + xlab("Body Temperature (degrees F)") +  ylab("Count")
+
+print(BodyTemp_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Chills/Sweat_
+```{r}
+chillsweat_plot <- ggplot(data=exploration_df, aes(x=ChillsSweats, fill=ChillsSweats)) + geom_bar() +
+labs(title= "Presence / Absence of Chill / Sweats") + xlab("Presentation of Chills / Sweats") +  ylab("Count")
+
+print(chillsweat_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Fatigue_
+```{r}
+fatigue_plot <- ggplot(data=exploration_df, aes(x=Fatigue, fill=Fatigue)) + geom_bar() +
+labs(title= "Presence / Absence of Fatigue") + xlab("Presentation of Fatigue") +  ylab("Count")
+
+print(fatigue_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Subjective Fever_
+```{r}
+SubFever_plot <- ggplot(data=exploration_df, aes(x=SubjectiveFever, fill=SubjectiveFever)) + geom_bar() +
+labs(title= "Presence / Absence of Subjective Fever") + xlab("Presentation of Sunjective Fever") +  ylab("Count")
+
+print(SubFever_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Weakness_
+```{r}
+weakness_plot <- ggplot(data=exploration_df, aes(x=WeaknessYN, fill=WeaknessYN)) + geom_bar() +
+labs(title= "Presence / Absence of Weakness") + xlab("Presentation of Weakness") +  ylab("Count")
+
+print(weakness_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Ab Pain_
+```{r}
+AbPn_plot <- ggplot(data=exploration_df, aes(x=AbPain, fill=AbPain)) + geom_bar() +
+labs(title= "Presence / Absence of Ab Pain") + xlab("Presentation of Ab Pain") +  ylab("Count")
+
+print(AbPn_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Itchy Eyes_
+```{r}
+ItchyEyes_plot <- ggplot(data=exploration_df, aes(x=ItchyEye, fill=ItchyEye)) + geom_bar() +
+labs(title= "Presence / Absence of Itchy Eyes") + xlab("Presentation of Itchy Eyes") +  ylab("Count")
+
+print(ItchyEyes_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Tooth Pain_
+```{r}
+Toothpain_plot <- ggplot(data=exploration_df, aes(x=ToothPn, fill=ToothPn)) + geom_bar() +
+labs(title= "Presence / Absence of Tooth Pain") + xlab("Presentation of Tooth Pain") +  ylab("Count")
+
+print(Toothpain_plot)
+```
+
+</br>
+
+_Below is a bar plot of presence/absence of Vomit_
+```{r}
+Vomit_plot <- ggplot(data=exploration_df, aes(x=Vomit, fill=Vomit)) + geom_bar() +
+labs(title= "Presence / Absence of Vomit") + xlab("Presentation of Vomit") +  ylab("Count")
+
+print(Vomit_plot)
+```
+</br>
+
+_Below is a bar plot of presence/absence of Diarrhea_
+```{r}
+Diarrhea_plot <- ggplot(data=exploration_df, aes(x=Diarrhea, fill=Diarrhea)) + geom_bar() +
+labs(title= "Presence / Absence of Diarrhea") + xlab("Presentation of Diarrhea") +  ylab("Count")
+
+print(Diarrhea_plot)
+```
+#### In my opinion, nausea does not present that often, seeing as about 50% more individials did not have nausea as those that did. Therefore, I want to use body temperature as my main outcome. Additionally, I want to look at the correlation between who could precieve having a fever (subjective fever) and actually change in body tmeperature. I also look at the relationship between chills/sweats as an indicator of changing body temperature. Additionally, I would like to look at the correlation between gastro intestianl (GI) issues (vomiting and diarrhea) with changing body temperture. This could be quite serious if those with high body temps also present with these GI issues as all three indicate loss of water due to infection, thus leading to severe dehydration.
+
+</br>
+
+_Below is a box plot showing presence and absence of subjectively determined fever as a predictor to actual change in body temperature_
+```{r}
+subfev_bodytemp <- ggplot(exploration_df, aes(x = SubjectiveFever, y = BodyTemp)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Body Temperature and Subjective \n Determination of Fever") +
+  scale_x_discrete(name = "Subjective Fever Determination") +
+  scale_y_continuous(name = "Body Temperature (degrees F)") + 
+  theme(plot.title = element_text(size = 12)) +
+  stat_boxplot(geom = 'errorbar', width = 0.15)
+
+print(subfev_bodytemp)
+```
+</br>
+
+_There does seem to be a relationship with subjectively determining you have a fever with higher body temperature. The interquartile range (IQR) of the "yes" column is at a higher body temperature range than the "no" column Additionally, the elevated number of high body temp range outliers indicates that more people who have high body temps correctly indicate a fever. What is interesting is that there do seem to be people that have a fever based on body temperature but don't say they do. We can usually feel if we have a fever, especially one of 102 F, yet there are some who don't recognize it. However, because the error bars overlap, the relationship is not significant._
+
+</br>
+_Below is a box plot showing presence and absence of chills/sweats as a predictor to actual change in body temperature_
+```{r}
+CS_bodytemp <- ggplot(exploration_df, aes(x = ChillsSweats, y = BodyTemp)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Body Temperature and \n Presence of Chills/Sweat") +
+  scale_x_discrete(name = "Presence of Chills/Sweat") +
+  scale_y_continuous(name = "Body Temperature (degrees F)") + 
+  theme(plot.title = element_text(size = 12)) + 
+  stat_boxplot(geom = 'errorbar', width = 0.15)
+
+print(CS_bodytemp)
+```
+</br>
+
+_Like the box plot of subjective fever and body temperature, there does seem to be a relationship with presence of sweats and chills with higher body temperature. Also similarly, the elevated number of high body temp range outliers indicates that more people who have high body temps have Chills/Sweats. However, because the error bars overlap, the relationship is not significant._
+
+</br>
+
+_Below is a box plot showing change in body temperature as a function of presence and absence of Vomit_
+```{r}
+vomit_bodytemp <- ggplot(exploration_df, aes(x = Vomit, y = BodyTemp)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Body Temperature and \n Presence of Vomit") +
+  scale_x_discrete(name = "Presence of Vomit") +
+  scale_y_continuous(name = "Body Temperature (degrees F)") + 
+  theme(plot.title = element_text(size = 12)) + 
+  stat_boxplot(geom = 'errorbar', width = 0.15)
+
+print(vomit_bodytemp)
+```
+</br>
+
+_Once again, a similar trend as above in reference to the IQR of the presence/absence of vomiting with respect to changing body temperature._
+
+</br>
+
+_Below is a box plot showing change in body temperature as a function of presence and absence of Diarrhea._
+```{r}
+diarrhea_bodytemp <- ggplot(exploration_df, aes(x = Diarrhea, y = BodyTemp)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Body Temperature and \n Presence of Diarrhea") +
+  scale_x_discrete(name = "Presence of Diarrhea") +
+  scale_y_continuous(name = "Body Temperature (degrees F)") + 
+  theme(plot.title = element_text(size = 12)) + 
+  stat_boxplot(geom = 'errorbar', width = 0.15)
+
+print(diarrhea_bodytemp)
+```
+</br>
+
+_Finally, we do not see the same trend when plotting the distribution of diarrhea presence with respect to change in body temperature. the IQRs are roughly the same range between the "yes" and "no" groups._ 
+

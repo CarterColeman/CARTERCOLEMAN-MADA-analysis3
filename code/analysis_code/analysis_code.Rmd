@@ -1,0 +1,244 @@
+---
+title: "analysis_code"
+author: "C. Coleman"
+date: "10/14/2021"
+output: html_document
+---
+
+## Welcome to the analysis portion of Module 8! We are going to start of with the porcessed data from called "clean_df". Here, our main outcomes are still "Nausea" and "Body Temperature". Our main predictor variable is now "Runny Nose". However, we will run both linear and logistic regression analysis for or each of the main outcomes and all other predictors.
+
+</br>
+
+_To get started, let's load all the libraries we will need._
+```{r}
+library(tidymodels) #statistical modeling package
+library(ggplot2) #All things plotting
+library(here) #loading data without pathways
+library(broom) #for cleaning up output from lm()
+```
+
+
+</br>
+
+#### Here we are going to load in "clean_df" as out starting, processed data frame.
+
+</br>
+
+_Load clean_df using here function._
+```{r}
+clean_df_location <- here::here("data", "processed_data", "processeddata.RDS")
+
+clean_df <- readRDS(clean_df_location)
+
+View(clean_df)
+```
+
+</br>
+
+### With our processed data loaded, it is time to start modeling! We are going to begin by fitting a linear regression model of Body Temperature as a function of the variable Runny Nose.
+
+</br>
+
+### Linear Regression Section
+</br>
+#### Linear gression model for Body Temperature and Runny Nose.
+
+</br>
+
+_We need to first set the linear model engine._
+```{r}
+lm_mod <- linear_reg() %>% 
+  set_engine("lm")
+```
+
+</br>
+
+_Next, we are going to estimate the linear model for body temperature as a function of runny nose presence using the fit() function._
+```{r}
+lm_fit <- 
+  lm_mod %>% 
+  fit(BodyTemp ~ RunnyNose, data = clean_df)
+
+lm_fit
+```
+</br>
+
+_After fitting the model, we need to use the tidy() function to summarize our linear regression model and save if as a data frame._
+```{r}
+RN_BT_lm <- tidy(lm_fit)
+```
+</br>
+
+_Finally, let's look at some more statistics for this model using the glance() function._
+```{r}
+glance(lm_fit)
+```
+</br>
+
+_It looks like there is a significant correlation between having (yes) a runny nose and body temperature (p = 0.003). However, the fit is not that great (r^2 = 0.012). This means the predictive power is not that great for our model._
+
+#### Now, let's run a more complex linear model for body temperature as a function of all predictor variables.
+
+</br>
+
+_Set the linear model engine._
+```{r}
+lm_mod2 <- linear_reg() %>% 
+  set_engine("lm")
+```
+
+</br>
+
+_Estimate the linear model for body temperature as a function of all predictors using the fit() function._
+```{r}
+lm_fit2 <- 
+  lm_mod2 %>% 
+  fit(BodyTemp ~ ., data = clean_df)
+
+lm_fit2
+```
+</br>
+
+_After fitting the model, we need to use the tidy() function to summarize our linear regression model and save it as a data frame._
+```{r}
+ALL_BT_lm <- tidy(lm_fit2)
+```
+</br>
+
+_Finally, let's look at some more statistics for this model using the glance() function._
+```{r}
+glance(lm_fit2)
+```
+</br>
+
+_Our model for predicting body temperature based on all other symptoms is still significant (p = 4.196701e-08), but has low predictive power (r^2 = 0.1286752)._
+
+#### We have generated two models. But, while both are significant, both of them are poor pridictors of body temperature as a function other important symptoms. However, it still impoertant to know which one may be better. We can quantify which one is a better model using an ANOVA test.
+
+</br>
+
+_Comparison of the simple and complex linear models using an ANOVA test of variance._
+```{r}
+lm_aov <- anova(lm_fit$fit, lm_fit2$fit, test = "Chisq")
+```
+
+</br>
+
+_The results of the ANOVA test indicate that the more complex model, with 33 additional variables, is a better fit (pr (>Chi) = 1.357072e-07)._
+
+</br>
+
+### Logistic Regression
+
+</br>
+
+#### Now, we are going to shift into the logistic regression section of the analysis. This will involve Nausea as the outcome of interest with all other variables as predictor variables of interest. It is of note that because the outcome is now *categorical*, we MUST use logistic regression models. These are still a part of the Tidymodels() package, but note the use of glm() instead of lm().
+
+</br>
+
+#### Fitting a logistic model for nausea as a function of runny nose.
+
+_set logistic model engine._
+
+```{r}
+glm_mod <- logistic_reg() %>% 
+  set_engine("glm")
+```
+
+</br>
+
+_Estimate the logistic model for nausea as a function of runny nose presence using the fit() function._
+```{r}
+glm_fit <- 
+  glm_mod %>% 
+  fit(Nausea ~ RunnyNose, data = clean_df)
+
+glm_fit
+```
+</br>
+
+_After fitting the model, use the tidy() function to summarize our logistic regression model and save it as a data frame._
+```{r}
+RN_N_glm <- tidy(glm_fit)
+```
+</br>
+
+_Finally, let's look at some more statistics for this model using the glance() function._
+```{r}
+glance(glm_fit)
+```
+</br>
+
+#### Complex logistic model for Nausea as a function of all predictor variables.
+
+</br>
+
+_Set the logistic model engine._
+```{r}
+glm_mod2 <- logistic_reg() %>% 
+  set_engine("glm")
+```
+
+</br>
+
+_Estimate logistic model for nausea as a function of all predictors using the fit() function._
+```{r}
+glm_fit2 <- 
+  glm_mod2 %>% 
+  fit(Nausea ~ ., data = clean_df)
+
+glm_fit2
+```
+</br>
+
+_Use the tidy() function to summarize logistic regression model and save it as a data frame._
+```{r}
+ALL_N_glm <- tidy(glm_fit2)
+```
+</br>
+
+_Finally, let's look at some more statistics for this model using the glance() function._
+```{r}
+glance(glm_fit2)
+```
+</br>
+
+#### Compare the logistic regression models above. 
+
+</br>
+
+_Comparison of the simple and complex logistic models using an ANOVA test of variance._
+```{r}
+glm_aov <- anova(glm_fit$fit, glm_fit2$fit, test = "Chisq")
+```
+
+</br>
+
+_Again, the results of the ANOVA test indicate that the more complex model, with 33 additional variables, is a better fit (pr (>Chi) = 1.560335e-24)._
+
+</br>
+
+#### Finally, lets save our models.
+
+_Saves all data into results using here() function._
+```{r}
+RN_BT_lm_location <- here::here("results", "Simple_lm.rds")
+saveRDS(RN_BT_lm, file = RN_BT_lm_location)
+
+ALL_BT_lm_location <- here::here("results", "Complex_lm.rds")
+saveRDS(ALL_BT_lm, file = ALL_BT_lm_location)
+
+lm_aov_location <- here::here("results", "aov_lm.rds")
+saveRDS(lm_aov, file = lm_aov_location)
+
+RN_N_glm_location <- here::here("results", "Simple_glm.rds")
+saveRDS(RN_N_glm, file = RN_N_glm_location)
+
+ALL_N_glm_location <- here::here("results", "Complex_glm.rds")
+saveRDS(ALL_N_glm, file = ALL_N_glm_location)
+
+glm_aov_location <- here::here("results", "aov_glm.rds")
+saveRDS(glm_aov, file = glm_aov_location)
+```
+
+
