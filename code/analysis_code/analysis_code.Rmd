@@ -212,6 +212,7 @@ _Comparison of the simple and complex logistic models using an ANOVA test of var
 glm_aov <- anova(glm_fit$fit, glm_fit2$fit, test = "Chisq")
 ```
 
+
 </br>
 
 _Again, the results of the ANOVA test indicate that the more complex model, with 33 additional variables, is a better fit (pr (>Chi) = 1.560335e-24)._

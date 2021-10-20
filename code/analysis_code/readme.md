@@ -8,3 +8,8 @@ clean_df <- readRDS(clean_df_location)
 ```
 
 Based on our assignment, we predetermined that our outcomes of interest are "Nausea" (Categorical (Y/N)) and "body temperature" (Continuous).
+
+
+#########Part 2! Analysis for Module 9##########
+
+The .Rmd file labeled analysis3_part2 contains code to split/train the clean_df file created above. As such, the goal of this code is to assess model fitting in the the module 8 analysis previously done.
