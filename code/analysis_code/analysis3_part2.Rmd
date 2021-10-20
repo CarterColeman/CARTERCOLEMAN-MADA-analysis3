@@ -127,11 +127,11 @@ _At this point, we have a fit model, a workflow for that model, and have some pr
 ```{r}
 #Make ROC curve for test data predictions and calculate area under the curve
 Nausea_aug_test %>% 
-  roc_curve(truth = Nausea, .pred_Yes) %>% 
+  roc_curve(truth = Nausea, .pred_Yes, event_level = "second") %>% 
   autoplot()
 
 Nausea_aug_test %>%
-  roc_auc(truth = Nausea, .pred_Yes)
+  roc_auc(truth = Nausea, .pred_Yes, event_level = "second")
 ```
 </br>
 
@@ -142,16 +142,16 @@ Nausea_aug_train <-
 
 #Make ROC curve for training data and calculate area under the curve
 Nausea_aug_train %>% 
-  roc_curve(truth = Nausea, .pred_Yes) %>% 
+  roc_curve(truth = Nausea, .pred_Yes, event_level = "second") %>% 
   autoplot()
 
 Nausea_aug_train %>%
-  roc_auc(truth = Nausea, .pred_Yes)
+  roc_auc(truth = Nausea, .pred_Yes, event_level = "second")
 ```
 
 </br>
 
-_The resulting ROC_AUC values were 0.30 and 0.21 for the test data model and the training data model, respectively. This suggests that the models were not a good fit to predict outcomes for the data._
+_The resulting ROC_AUC values were 0.68 and 0.79 for the test data model and the training data model, respectively. This suggests that the models are good fits to our data and can predict outcomes._
 
 </br>
 
@@ -189,7 +189,7 @@ _Use workflow to fit the model to the train data set (Nausea_RN_Recipe)._
 ```{r}
 #Defining a command that runs model fitting to Nausea_RN_Recipe
 Nausea_RN_fit <- 
-  Nausea_glm_wflow %>% 
+  Naus_RN_glm_wflow %>% 
   fit(data = train_data)
 
 #Pull log reg fit model using parsnip()
@@ -231,11 +231,11 @@ Nausea_RN_aug_test <-
 ```{r}
 #Make ROC curve for test data predictions and calculate area under the curve
 Nausea_RN_aug_test %>% 
-  roc_curve(truth = Nausea, .pred_Yes) %>% 
+  roc_curve(truth = Nausea, .pred_Yes, event_level = "second") %>% 
   autoplot()
 
 Nausea_RN_aug_test %>%
-  roc_auc(truth = Nausea, .pred_Yes)
+  roc_auc(truth = Nausea, .pred_Yes, event_level = "second")
 ```
 </br>
 
@@ -246,13 +246,13 @@ Nausea_RN_aug_train <-
 
 #Make ROC curve for training data and calculate area under the curve
 Nausea_RN_aug_train %>% 
-  roc_curve(truth = Nausea, .pred_Yes) %>% 
+  roc_curve(truth = Nausea, .pred_Yes, event_level = "second") %>% 
   autoplot()
 
 Nausea_RN_aug_train %>%
-  roc_auc(truth = Nausea, .pred_Yes)
+  roc_auc(truth = Nausea, .pred_Yes, event_level = "second")
 ```
 
 </br>
 
-_The resulting ROC_AUC values were 0.25 and 0.23 for the test data model and the training data model, respectively. This suggests that the models were not a good fit to predict outcomes for the data._
+_The resulting ROC_AUC values were 0.48 and 0.52. for the test data model and the training data model, respectively. This suggests that the test data was not fit well by the model, but the model had a decent fit to train data, but not a great fit. Therefore, since both ROC_AUC values are ~0.5, it is okay to make predictions using the model, but use caution._
