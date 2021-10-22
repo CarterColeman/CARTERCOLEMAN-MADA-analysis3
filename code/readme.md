@@ -1,1 +1,1 @@
-The two included folders include code for processing (processing_code) the raw data obtained from Brian McKay's repository and the exploration of the processed data, followed by the statistical analysis required for MADA Module 8 (analysis_code).
+The two included folders include code for processing (processing_code) the raw data obtained from Brian McKay's repository and the exploration of the processed data, followed by the statistical analysis, modeling, and modeling assessment required for MADA Modules 8 and 9 (analysis_code).

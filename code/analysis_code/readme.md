@@ -13,3 +13,11 @@ Based on our assignment, we predetermined that our outcomes of interest are "Nau
 #########Part 2! Analysis for Module 9##########
 
 The .Rmd file labeled analysis3_part2 contains code to split/train the clean_df file created above. As such, the goal of this code is to assess model fitting in the the module 8 analysis previously done.
+
+In this section, we assessed both logistic regression and linear regression models. Logistic regression models were assessed for fit to the cleaned symptom data using ROC and ROC_AUC. Linear Regression was assessed for fit using RSME.
+Logistic modeling was conducted in the following manner:
+- Nausea as an outcome of all other variables as a predictor.
+- Nausea as an outcome of RunnyNose, specifically.
+Linear regression modeling was conducted as followed:
+- Body Temperature as an outcome of all other variables as a predictor.
+- Body Temperature as an outcome of RunnyNose, specifically.
