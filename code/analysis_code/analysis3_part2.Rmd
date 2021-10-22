@@ -256,3 +256,174 @@ Nausea_RN_aug_train %>%
 </br>
 
 _The resulting ROC_AUC values were 0.48 and 0.52. for the test data model and the training data model, respectively. This suggests that the test data was not fit well by the model, but the model had a decent fit to train data, but not a great fit. Therefore, since both ROC_AUC values are ~0.5, it is okay to make predictions using the model, but use caution._
+
+
+
+
+
+# ########################Priyanka################################
+
+
+#Model Continous Outcomes
+
+
+# Creating the recipe for BodyTemp vs all predictors
+
+```{r}
+BodyTemp.recipe <- recipe(BodyTemp ~ ., data = train_data)
+BodyTemp.recipe
+```
+
+
+# Fitting a linear model
+
+
+#Setting up the linear model
+
+```{r}
+lr.mod <-  linear_reg() %>% 
+  set_engine("lm") %>%
+  set_mode("regression")
+```
+
+#Create workflow that adds our recipe and model
+
+```{r}
+BodyTemp.wflow <- 
+  workflow() %>% 
+  add_model(lr.mod) %>% 
+  add_recipe(BodyTemp.recipe)
+```
+
+
+```{r}
+BodyTemp.wflow
+```
+
+#Use workflow to fit the model to the train data set
+
+```{r}
+BodyTemp_fit <- 
+  BodyTemp.wflow %>% 
+  fit(data = train_data)
+```  
+  
+  
+# To view a tibble
+
+```{r}
+BodyTemp_fit %>%
+  extract_fit_parsnip() %>%
+  tidy()
+```  
+  
+### Using Workflows to Make Predictions
+
+#predict values in test data
+
+```{r}
+predict(BodyTemp_fit, test_data)
+``` 
+
+#Using augment() function to predict outcomes in the test data.
+
+```{r}
+BodyTemp.aug <- 
+  augment(BodyTemp_fit, test_data)
+  
+# The data look like:
+
+BodyTemp.aug %>%
+  select(BodyTemp, .pred)
+
+```
+
+# Model Evaluation With RMSE
+
+```{r}
+BodyTemp.aug %>% 
+  rmse(truth = BodyTemp, .pred)
+  
+#rmse = 1.12 
+
+```
+#Model with just the main predictor: Runnynose
+
+```{r}
+BT_RN_recipe <- recipe(BodyTemp ~ RunnyNose, data = train_data)
+
+BT_RN_recipe
+
+```
+
+# Fitting a linear model
+
+
+#Setting up the linear model
+
+```{r}
+lr.mod1 <-  linear_reg() %>% 
+  set_engine("lm") %>%
+  set_mode("regression")
+```
+
+#Create workflow that adds our recipe and model
+
+```{r}
+BT_RN_wflow <- 
+  workflow() %>% 
+  add_model(lr.mod1) %>% 
+  add_recipe(BT_RN_recipe)
+```
+
+#Use workflow to fit the model to the train data set
+
+```{r}
+BT_RN_fit <- 
+  BT_RN_wflow %>% 
+  fit(data = train_data)
+``` 
+
+# To view a tibble
+
+```{r}
+BT_RN_fit %>%
+  extract_fit_parsnip() %>%
+  tidy()
+
+BT_RN_fit
+
+```  
+
+### Using Workflows to Make Predictions
+
+#predict values in test data
+
+```{r}
+predict(BT_RN_fit, test_data)
+``` 
+
+#Using augment() function to predict outcomes in the test data.
+
+```{r}
+BT_RN_aug <- 
+  augment(BT_RN_fit, test_data)
+  
+# The data look like:
+
+BT_RN_aug %>%
+  select(BodyTemp, .pred)
+
+```
+
+# Model Evaluation With RMSE
+
+```{r}
+BT_RN_aug %>% 
+  rmse(truth = BodyTemp, .pred)
+  
+#rmse = 1.10
+
+```
+
+# Looking at the output, the model with all the predictor is better than model with just runny nose as a predcitor
