@@ -642,16 +642,16 @@ dtree_resample %>%
 
 _Plot model performance using autoplot()_
 ```{r}
-#Plot of actual train_data2
 dtree_resample %>%
   autoplot()
 ```
+</br>
 
 _Showing and selecting best performing Models_
 ```{r}
 #Showing best performing tree models
 dtree_resample %>%
-  show_best()
+  show_best(n=1)
   
 #Selects best performing model
 best_tree <- dtree_resample %>%
@@ -673,20 +673,43 @@ dtree_final_wf
 #Create workflow for fitting model to train_data2 predictions
 dtree_final_fit <- 
   dtree_final_wf %>%
-  last_fit(data_split2) 
-
-collect_metrics(dtree_final_fit)
-
-#Predict values and plot model fit for predicted values
-library(rpart.plot)#package used to plot predicted value model
-dtree_pred <- 
-  dtree_final_fit %>%
-  collect_predictions()
-
-dtree
+  fit(train_data2) 
 ```
 
+#### Calculating residuals and ploting Actual vs. Predicted values
 
+</br>
+_Calculating residuals: In the Tidymodels tutorial used to do this exercise, I could not get the built in functions to cooperate (looking at you autoplot()). This is because autoplot() cannot use the output of any predict functions. Therefore, below is how we do it manually._
+```{r}
+dtree_residuals <- dtree_final_fit %>%
+  augment(train_data2) %>% #use augment() to make predictions from train data
+  select(c(.pred, BodyTemp)) %>%
+  mutate(.resid = BodyTemp - .pred) #calculate residuals and make new row.
+
+dtree_residuals
+```
+_model predictions from tuned model vs actual outcomes_
+```{r}
+dtree_pred_plot <- ggplot(dtree_residuals, 
+                          aes(x = BodyTemp, 
+                              y = .pred)) + 
+  geom_point() + 
+  labs(title = "Predictions vs Actual: Decision Tree", 
+       x = "Body Temperature Outcome", 
+       y = "Body Temperature Prediction")
+dtree_pred_plot
+```
+_plot residuals vs predictions_
+```{r}
+dtree_residual_plot <- ggplot(dtree_residuals, 
+                              aes(y = .resid, 
+                                  x = .pred)) + 
+  geom_point() + 
+  labs(title = "Predictions vs Residuals: Decision Tree", 
+       x = "Body Temperature Prediction", 
+       y = "Residuals")
+plot(dtree_residual_plot) #view plot
+```
 
 </br>
 
@@ -748,7 +771,7 @@ lasso_resample %>%
   show_best()
   
 #Selects best performing model
-lasso_resample %>%
+best_lasso <- lasso_resample %>%
   select_best()
 ```
 
@@ -757,22 +780,47 @@ _This shows that model 18 is the best performing models (RMSE = 1.16; STE = 0.01
 _Creating final fit based on best model permutation and plotting predicted values from that final fit model_
 ```{r}
 lasso_final_wf <- 
-  dtree_wf %>% 
-  finalize_workflow(best_tree)
+  lasso_wf %>% 
+  finalize_workflow(best_lasso)
 
-dtree_final_wf
+lasso_final_wf
 
 #Create workflow for fitting model to train_data2 predictions
-dtree_final_fit <- 
-  dtree_final_wf %>%
-  last_fit(data_split2) 
+lasso_final_fit <- 
+  lasso_final_wf %>%
+  fit(train_data2) 
+```
 
-collect_metrics(dtree_final_fit)
+_Calculating residuals: In the Tidymodels tutorial used to do this exercise, I could not get the built in functions to cooperate (looking at you autoplot()). This is because autoplot() cannot use the output of any predict functions. Therefore, below is how we do it manually._
+```{r}
+lasso_residuals <- lasso_final_fit %>%
+  augment(train_data2) %>% #use augment() to make predictions from train data
+  select(c(.pred, BodyTemp)) %>%
+  mutate(.resid = BodyTemp - .pred) #calculate residuals and make new row.
 
-#Predict values and plot model fit for predicted values
-dtree_Pred_final <- collect_predictions(dtree_final_fit)
-  
-autoplot(dtree_Pred_final)
+lasso_residuals
+```
+_model predictions from tuned model vs actual outcomes_
+```{r}
+lasso_pred_plot <- ggplot(lasso_residuals, 
+                          aes(x = BodyTemp, 
+                              y = .pred)) + 
+  geom_point() + 
+  labs(title = "Predictions vs Actual: LASSO", 
+       x = "Body Temperature Outcome", 
+       y = "Body Temperature Prediction")
+lasso_pred_plot
+```
+_plot residuals vs predictions_
+```{r}
+lasso_residual_plot <- ggplot(lasso_residuals, 
+                              aes(y = .resid, 
+                                  x = .pred)) + 
+  geom_point() + 
+  labs(title = "Predictions vs Residuals: LASSO", 
+       x = "Body Temperature Prediction", 
+       y = "Residuals")
+plot(lasso_residual_plot) #view plot
 ```
 
 </br>
@@ -830,20 +878,88 @@ rf_resample %>%
 _Plot model performance using autoplot()_
 ```{r}
 #Plot of actual train_data2
-dtree_resample %>%
+rf_resample %>%
   autoplot()
 ```
 
 _Showing and selecting best performing Models_
 ```{r}
 #Showing best performing tree models
-dtree_resample %>%
+rf_resample %>%
   show_best()
   
 #Selects best performing model
-dtree_resample %>%
+best_rf <- rf_resample %>%
   select_best()
 ```
 
-_This shows that one of the shortest trees (depth = 1) is the best performing models (RMSE = 1.19; STE = 0.018). However, it doesn't really perm any better than the null model, making it a bad fit to the data._
+_This shows that "mtry 4" is the best performing models (RMSE = 1.16; STE = 0.016). However, it doesn't really perform any better than the null model, making it a bad fit to the data._
+
+_Creating final fit based on best model permutation and plotting predicted values from that final fit model_
+```{r}
+rf_final_wf <- 
+  rf_wf %>% 
+  finalize_workflow(best_rf)
+
+rf_final_wf
+
+#Create workflow for fitting model to train_data2 predictions
+rf_final_fit <- 
+  rf_final_wf %>%
+  fit(train_data2) 
+```
+
+_Calculating residuals: In the Tidymodels tutorial used to do this exercise, I could not get the built in functions to cooperate (looking at you autoplot()). This is because autoplot() cannot use the output of any predict functions. Therefore, below is how we do it manually._
+```{r}
+rf_residuals <- rf_final_fit %>%
+  augment(train_data2) %>% #use augment() to make predictions from train data
+  select(c(.pred, BodyTemp)) %>%
+  mutate(.resid = BodyTemp - .pred) #calculate residuals and make new row.
+
+rf_residuals
+```
+_model predictions from tuned model vs actual outcomes_
+```{r}
+rf_pred_plot <- ggplot(rf_residuals, 
+                          aes(x = BodyTemp, 
+                              y = .pred)) + 
+  geom_point() + 
+  labs(title = "Predictions vs Actual: Random Forest", 
+       x = "Body Temperature Actual", 
+       y = "Body Temperature Prediction")
+rf_pred_plot
+```
+_plot residuals vs predictions_
+```{r}
+rf_residual_plot <- ggplot(rf_residuals, 
+                              aes(y = .resid, 
+                                  x = .pred)) + 
+  geom_point() + 
+  labs(title = "Predictions vs Residuals: Random Forest", 
+       x = "Body Temperature Prediction", 
+       y = "Residuals")
+plot(rf_residual_plot) #view plot
+```
+
+</br>
+
+# Model selection: Discussion of fit
+_Based on reported RMSE alone, all the models performed pretty equally compared to the null model. However, when we made predictions and calculated residuals, visually, you could actually see some sort of relationship between actual and predicated body temperature data for the LASSO and random forest models. Therefore, I would like to exclude the decision tree based on that criteria. Finally, I would like to choose LASSO, because the random forest does not keep every single model set when running multiple permutations. Rather, it takes a random subset of "trees". This adds some bias into the fit (in this case it may over-fit), but the advantage is that it is quicker to run. In this case, LASSO is "more accurate" and slower, but the time it took to run these models weren't that drastic.
+
+</br>
+
+# Final evaluation
+
+_To give the LASSO a final evaluation, we will try fitting it to the test data and compare to the train data. This will allow us to see if model performance is consistent for body temperature data._
+```{r}
+#fit to test data
+lasso_last_fit <- 
+  lasso_final_wf %>% 
+  last_fit(data_split2)
+
+lasso_last_fit %>% 
+  collect_metrics()
+```
+
+
 
