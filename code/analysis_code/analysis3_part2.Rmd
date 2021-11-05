@@ -13,12 +13,15 @@ _As such, we will be using the Tidymodels package to continue practicing data an
 
 </br>
 
-_As always, I like to start by loading needed packages. Our core packages for this specific exercise will be here(), dpylr(), and tidymodels(). Additionally, I like to load tidyverese() just because I use it fairly often._
+_As always, I like to start by loading needed packages. Our core packages for this specific exercise will be here(), dpylr(), and tidymodels(). Additionally, I like to load tidyverse() just because I use it fairly often._
 ```{r}
-library(tidyverse)
-library(tidymodels)
-library(dplyr)
-library(here)
+library(tidyverse) #Working with multiple Tidy packages
+library(tidymodels) #Building models
+library(dplyr) #data manipulation
+library(here) #setting pathways for saving files
+library(rpart) #Model fitting
+library(ranger) #Model fitting
+library(glmnet) #Model fitting
 ```
 
 
@@ -28,9 +31,15 @@ library(here)
 
 _Next, we need to load in out data. We are going to pull from the processed data folder using the here() function. Note that while we are reading in the clean_df data frame, we will be calling it "df" in this exercise._
 ```{r}
+#Next two lines load data frame for the linear and logistic regression analysis for the analysis3 portion of this MADA exercise.
 clean_df_location <- here::here("data", "processed_data", "processeddata.RDS")
 
-df <- readRDS(clean_df_location)
+clean_data2 <- readRDS(clean_df_location)
+
+#These two lines are for loading an additional cleaned data frame used for the machine learning portion of this MADA analysis.
+clean_df_location3 <- here::here("data", "processed_data", "processeddata3.RDS")
+
+clean_data3 <- readRDS(clean_df_location3)
 ```
 
 </br>
@@ -40,7 +49,7 @@ df <- readRDS(clean_df_location)
  _The first step is splitting our data into a training data set and a test data set. The training set will contain most of the original data (~75%), while the test data set will have a smaller portion (~25%). The training data is used to fit a model and the test data is to assess how good of a fit the data is._
 ```{r}
 # Split 3/4 of the data into training data 
-data_split <- initial_split(df, prop = 3/4)
+data_split <- initial_split(clean_data2, prop = 3/4)
 
 # Make new data frames for training and test data
 train_data <- training(data_split)
@@ -428,3 +437,413 @@ BT_RN_aug %>%
 ```
 
 _Looking at the output, the model with all the predictor is better than model with just runny nose as a predictor._
+
+# Machine Learning Modeling: 11/1/2021; Carter Coleman
+
+</br>
+
+## Data Set Up:
+
+</br>
+
+_Set seed: This sets a random number generator with initial (pseudo)random values set as "123". We will need a series of random numbers created for our machine learning analysis._
+```{r}
+set.seed(123)
+```
+
+ _Test/Train data split: Split data into a training data set and a test data set. The training set will contain most of the original data (70%), while the test data set will have a smaller portion (30%). The training data is used to fit a model and the test data is to assess how good of a fit the data is._
+```{r}
+# Split 3/4 of the data into training data 
+data_split2 <- initial_split(clean_data3, prop = 7/10, strata = BodyTemp)
+
+# Make new data frames for training and test data
+train_data2 <- training(data_split2)
+test_data2  <- testing(data_split2)
+```
+
+</br>
+
+## Train Data: Body Temperature Null Model
+
+_5-fold cross validation, 5 times repeated for train data: Here we are setting a cross-validation of the machine learning models. Cross-validation is used to measure how the results of our machine learning models will generalize to an independent data set. As such, the folds created will be be 5 random sub-samples of the train data set to test the validity of our models within the train data set. The 5x5 structure is arbitrary._
+```{r}
+fold_BT <- vfold_cv(train_data2, v = 5, repeats = 5, strata = BodyTemp)
+```
+
+_Creating the recipe for BodyTemp vs all predictors_
+
+```{r}
+BodyTemp.recipe2 <- 
+  recipe(BodyTemp ~ ., data = train_data2) %>%
+  step_dummy(all_nominal(), -all_outcomes()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_predictors())
+
+BodyTemp.recipe2
+```
+_Setting linear regression model to assess relationship between body temperature (outcome) and all other predictor variables._
+```{r}
+lm_mod <- linear_reg() %>% set_engine("lm") %>% set_mode("regression")
+```
+
+_However, first we need to create our null model to test against._
+
+</br>
+
+### Null Model:
+
+ </br>
+
+_Creates null model recipe. When we call this term, it will indicate in our workflow that body temperature will be predicted by a value of 1 (NULL)._ 
+```{r}
+Null_recipe_lm_train <- recipe(BodyTemp ~ 1, data = train_data2)
+```
+
+_Creating the Workflow: this creates a set workflow for running a null linear regression model with body temperature as the outcome._
+```{r}
+null_wf <- workflow() %>% add_model(lm_mod) %>% add_recipe(Null_recipe_lm_train)
+```
+
+_Here, I am going to fit the null model created in the above workflow to the folds made from the train data set._
+```{r}
+null_train_lm <- fit_resamples(null_wf, resamples = fold_BT)
+```
+_Calculate RMSE for the train data linear model._
+```{r}
+Null_Train_Met <- collect_metrics(null_train_lm)
+
+Null_Train_Met
+```
+_RMSE = 1.21, with a standard deviation of 0.018. This will serve as our check to test our models against latter on.
+
+
+</br>
+
+## Test Data: Body Temperature Null Model
+
+_5-fold cross validation, 5 times repeated for test data: Here we are setting a cross-validation of the machine learning models. Cross-validation is used to measure how the results of our machine learning models will generalize to an independent data set. As such, the folds created will be be 5 random sub-samples of the test data set to test the validity of our models within the test data set. The 5x5 structure is arbitrary._
+```{r}
+fold_BT_test <- vfold_cv(test_data2, v = 5, repeats = 5, strata = BodyTemp)
+```
+
+_Creating the recipe for BodyTemp vs all other variables as predictors._
+
+```{r}
+BodyTemp.recipe2_test <- 
+  recipe(BodyTemp ~ ., data = test_data2) %>%
+  step_dummy(all_nominal(), -all_outcomes()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_predictors())
+
+BodyTemp.recipe2_test
+```
+
+_Setting linear regression model to assess relationship between body temperature (outcome) and all other predictor variables. This is already set above in a universal form._
+```{r}
+lm_mod <- linear_reg() %>% set_engine("lm") %>% set_mode("regression")
+```
+
+_Now, we need to create our null model to test against._
+
+</br>
+
+### Null Model: Test Data
+
+ </br>
+
+_Creates null model recipe. When we call this term, it will indicate in our workflow that body temperature will be predicted by a value of 1 (NULL)._ 
+```{r}
+Null_recipe_lm_test <- recipe(BodyTemp ~ 1, data = test_data2)
+```
+
+_Creating the Workflow: this creates a set workflow for running a null linear regression model with body temperature as the outcome._
+```{r}
+null_wf_test <- workflow() %>% add_model(lm_mod) %>% add_recipe(Null_recipe_lm_test)
+```
+
+_Here, I am going to fit the null model created in the above workflow to the folds made from the train data set._
+```{r}
+null_lm_test <- fit_resamples(null_wf_test, resamples = fold_BT_test)
+```
+_Calculate RMSE for the train data linear model._
+```{r}
+Null_test_Met <- collect_metrics(null_lm_test)
+```
+
+</br>
+
+# Model Tuning and Fitting
+
+### The following section sevrves three functions:
+1) Fit a Tree Model to our data using Body Temperature as the outcome of interest.
+2) Fit a LASSO Model to our data using Body Temperature as the outcome of interest.
+3) Fit a Tree Model to our data using Body Temperature as the outcome of interest.
+
+</br>
+
+## Tree Model
+
+</br>
+
+_Specifying The Model: Decision Tree_
+```{r}
+#Identifying hyperparameters we want to use.
+tune_spec_dtree <- 
+  decision_tree(
+    cost_complexity = tune(),
+    tree_depth = tune()
+  ) %>% 
+  set_engine("rpart") %>% 
+  set_mode("regression")
+
+tune_spec_dtree
+```
+</br>
+
+_Tune Grid Specification: Decision Tree_
+```{r}
+#create a regular grid of values for using convenience functions for each hyperparameter.
+tree_grid_dtree <-
+  dials::grid_regular(
+    cost_complexity(), 
+    tree_depth(), 
+    levels = 5)
+
+tree_grid_dtree
+```
+
+</br>
+
+_Creating a Workflow: Decision Tree_
+```{r}
+dtree_wf <- workflow() %>%
+  add_model(tune_spec_dtree) %>%
+  add_recipe(BodyTemp.recipe2)
+```
+
+</br>
+
+_Cross Validation with tunegrid(): Decision Tree_
+```{r}
+dtree_resample <- 
+  dtree_wf %>% 
+  tune_grid(
+    resamples = fold_BT,
+    grid = tree_grid_dtree
+    )
+
+dtree_resample
+
+dtree_resample %>%
+  collect_metrics()
+```
+
+</br>
+
+_Plot model performance using autoplot()_
+```{r}
+#Plot of actual train_data2
+dtree_resample %>%
+  autoplot()
+```
+
+_Showing and selecting best performing Models_
+```{r}
+#Showing best performing tree models
+dtree_resample %>%
+  show_best()
+  
+#Selects best performing model
+best_tree <- dtree_resample %>%
+  select_best()
+```
+
+_This shows that one of the shortest trees (depth = 1) is the best performing models (RMSE = 1.19; STE = 0.018). However, it doesn't really perform any better than the null model, making it a bad fit to the data._
+
+</br>
+
+_Creating final fit based on best model permutation and plotting predicted values from that final fit model_
+```{r}
+dtree_final_wf <- 
+  dtree_wf %>% 
+  finalize_workflow(best_tree)
+
+dtree_final_wf
+
+#Create workflow for fitting model to train_data2 predictions
+dtree_final_fit <- 
+  dtree_final_wf %>%
+  last_fit(data_split2) 
+
+collect_metrics(dtree_final_fit)
+
+#Predict values and plot model fit for predicted values
+library(rpart.plot)#package used to plot predicted value model
+dtree_pred <- 
+  dtree_final_fit %>%
+  collect_predictions()
+
+dtree
+```
+
+
+
+</br>
+
+## LASSO Model
+
+</br>
+
+_Specifying The Model: LASSO_
+```{r}
+lasso_mod <- 
+  linear_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+```
+
+</br>
+
+_Creating a Workflow: LASSO_
+```{r}
+lasso_wf <- workflow() %>%
+  add_model(lasso_mod) %>%
+  add_recipe(BodyTemp.recipe2)
+```
+
+</br>
+
+_Create Tuning Grid: LASSO_
+```{r}
+lasso_grid <- tibble(penalty = 10^seq(-3, 0, length.out = 30))
+```
+
+</br>
+
+_Cross Validation with tune_grid(): LASSO_
+```{r}
+lasso_resample <- 
+  lasso_wf %>%
+  tune_grid(resamples = fold_BT,
+            grid = lasso_grid,
+            control = control_grid(verbose = FALSE, save_pred = TRUE),
+            metrics = metric_set(rmse))
+
+lasso_resample %>%
+  collect_metrics()
+```
+
+</br>
+
+_Plot model performance using autoplot()_
+```{r}
+#Plot of actual train_data2
+lasso_resample %>%
+  autoplot()
+```
+
+_Showing and selecting best performing Models_
+```{r}
+#Showing best performing tree models
+lasso_resample %>%
+  show_best()
+  
+#Selects best performing model
+lasso_resample %>%
+  select_best()
+```
+
+_This shows that model 18 is the best performing models (RMSE = 1.16; STE = 0.017). However, it doesn't really perform any better than the null model, making it a bad fit to the data._
+
+_Creating final fit based on best model permutation and plotting predicted values from that final fit model_
+```{r}
+lasso_final_wf <- 
+  dtree_wf %>% 
+  finalize_workflow(best_tree)
+
+dtree_final_wf
+
+#Create workflow for fitting model to train_data2 predictions
+dtree_final_fit <- 
+  dtree_final_wf %>%
+  last_fit(data_split2) 
+
+collect_metrics(dtree_final_fit)
+
+#Predict values and plot model fit for predicted values
+dtree_Pred_final <- collect_predictions(dtree_final_fit)
+  
+autoplot(dtree_Pred_final)
+```
+
+</br>
+
+## Random Forest
+
+</br>
+
+_Create function to detect cores for Random Forest Model computation_
+```{r}
+cores <- parallel::detectCores()
+cores
+```
+_Specifying The Model: Random Forest_
+```{r}
+rf_mod <- 
+  rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores) %>% 
+  set_mode("regression")
+```
+
+</br>
+
+_Creating a Workflow: Random Forest_
+```{r}
+rf_wf <- workflow() %>%
+  add_model(rf_mod) %>%
+  add_recipe(BodyTemp.recipe2)
+```
+
+</br>
+
+_Create Tuning Grid: Random Forest_
+```{r}
+rf_grid  <- expand.grid(mtry = c(3, 4, 5, 6), min_n = c(40,50,60), trees = c(500,1000)  )
+```
+
+</br>
+
+_Cross Validation with tune_grid(): Random Forest_
+```{r}
+rf_resample <- 
+  rf_wf %>% 
+  tune_grid(fold_BT,
+            grid = 25,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(rmse))
+
+rf_resample %>%
+  collect_metrics()
+```
+
+</br>
+
+_Plot model performance using autoplot()_
+```{r}
+#Plot of actual train_data2
+dtree_resample %>%
+  autoplot()
+```
+
+_Showing and selecting best performing Models_
+```{r}
+#Showing best performing tree models
+dtree_resample %>%
+  show_best()
+  
+#Selects best performing model
+dtree_resample %>%
+  select_best()
+```
+
+_This shows that one of the shortest trees (depth = 1) is the best performing models (RMSE = 1.19; STE = 0.018). However, it doesn't really perm any better than the null model, making it a bad fit to the data._
+
